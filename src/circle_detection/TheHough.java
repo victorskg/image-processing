@@ -1,3 +1,5 @@
+package circle_detection;
+
 import org.opencv.core.*;
 import org.opencv.core.Point;
 import org.opencv.highgui.HighGui;
@@ -6,7 +8,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class TheHough {
     public void run(String[] args) {
-        String default_file = "src/images/circulares/3829.jpg";
+        String default_file = "src/images/circulares/3174.jpg";
         String filename = ((args.length > 0) ? args[0] : default_file);
         int quantidadeCirculos = 0;
         // Carrega imagem.
@@ -24,7 +26,7 @@ public class TheHough {
         Mat circles = new Mat();
         Imgproc.HoughCircles(gray, circles, Imgproc.HOUGH_GRADIENT, 1.0,
                 (double)gray.rows()/16, // mude este valor para detectar circulos a certas distancias um do outro.
-                100.0, 30.0, 1, 45); // ajuste os dois ultimos parametros
+                100.0, 30.0, 1, 70); // ajuste os dois ultimos parametros
         // (min_radius & max_radius) para detectar circulos largos.
         for (int x = 0; x < circles.cols(); x++) {
             double[] c = circles.get(0, x);

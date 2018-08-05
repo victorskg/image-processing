@@ -14,31 +14,19 @@ import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-/**
- *
- * @brief Sample code showing how to segment overlapping objects using Laplacian filtering, in addition to Watershed
- * and Distance Transformation
- *
- */
 class ImageSegmentation {
     public void run(String[] args) {
-        //! [load_image]
-        // Load the image
+        //Carrega imagem
         String filename = args.length > 0 ? args[0] : "src/images/3283.jpg";
         Mat srcOriginal = Imgcodecs.imread(filename);
         if (srcOriginal.empty()) {
-            System.err.println("Cannot read image: " + filename);
+            System.err.println("Não foi possível ler a imagem: " + filename);
             System.exit(0);
         }
 
-        // Show source image
         HighGui.imshow("Imagem original", srcOriginal);
-        //! [load_image]
 
-        //! [black_bg]
-        // Change the background from white to black, since that will help later to
-        // extract
-        // better results during the use of Distance Transform
+        //Transforma o fundo da imagem em preto
         Mat src = srcOriginal.clone();
         byte[] srcData = new byte[(int) (src.total() * src.channels())];
         src.get(0, 0, srcData);
@@ -54,27 +42,16 @@ class ImageSegmentation {
         }
         src.put(0, 0, srcData);
 
-        // Show output image
         HighGui.imshow("Imagem sem fundo", src);
-        //! [black_bg]
 
-        //! [sharp]
-        // Create a kernel that we will use to sharpen our image
         Mat kernel = new Mat(3, 3, CvType.CV_32F);
-        // an approximation of second derivative, a quite strong kernel
         float[] kernelData = new float[(int) (kernel.total() * kernel.channels())];
         kernelData[0] = 1; kernelData[1] = 1; kernelData[2] = 1;
         kernelData[3] = 1; kernelData[4] = -8; kernelData[5] = 1;
         kernelData[6] = 1; kernelData[7] = 1; kernelData[8] = 1;
         kernel.put(0, 0, kernelData);
 
-        // do the laplacian filtering as it is
-        // well, we need to convert everything in something more deeper then CV_8U
-        // because the kernel has some negative values,
-        // and we can expect in general to have a Laplacian image with negative values
-        // BUT a 8bits unsigned int (the one we are working with) can contain values
-        // from 0 to 255
-        // so the possible negative number will be truncated
+        //Algoritimo de Laplace
         Mat imgLaplacian = new Mat();
         Imgproc.filter2D(src, imgLaplacian, CvType.CV_32F, kernel);
         Mat sharp = new Mat();
@@ -82,16 +59,14 @@ class ImageSegmentation {
         Mat imgResult = new Mat();
         Core.subtract(sharp, imgLaplacian, imgResult);
 
-        // convert back to 8bits gray scale
         imgResult.convertTo(imgResult, CvType.CV_8UC3);
         imgLaplacian.convertTo(imgLaplacian, CvType.CV_8UC3);
 
-        // imshow( "Laplace Filtered Image", imgLaplacian );
         HighGui.imshow( "Imagem Laplaciana", imgLaplacian );;
         //! [sharp]
 
         //! [bin]
-        // Create binary image from source image
+        //Cria imagem binária
         Mat bw = new Mat();
         Imgproc.cvtColor(imgResult, bw, Imgproc.COLOR_BGR2GRAY);
         Imgproc.threshold(bw, bw, 40, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
@@ -99,26 +74,24 @@ class ImageSegmentation {
         //! [bin]
 
         //! [dist]
-        // Perform the distance transform algorithm
+        //Implementa o algoritimo da transformada de distância
         Mat dist = new Mat();
         Imgproc.distanceTransform(bw, dist, Imgproc.DIST_L2, 3);
 
-        // Normalize the distance image for range = {0.0, 1.0}
-        // so we can visualize and threshold it
+        //Normaliza a imagem dist no alcance = {0.0, 1.0}
         Core.normalize(dist, dist, 0.0, 1.0, Core.NORM_MINMAX);
         Mat distDisplayScaled = new Mat();
         Core.multiply(dist, new Scalar(255), distDisplayScaled);
         Mat distDisplay = new Mat();
         distDisplayScaled.convertTo(distDisplay, CvType.CV_8U);
-        HighGui.imshow("Distance Transform Image", distDisplay);
+        HighGui.imshow("Imagem da transformada de distância(dist)", distDisplay);
         //! [dist]
 
-        //! [peaks]
-        // Threshold to obtain the peaks
-        // This will be the markers for the foreground objects
+        //Limiar para obter os picos
+        //Estes serão os marcadores dos objetos em primeiro plano
         Imgproc.threshold(dist, dist, 0.4, 1.0, Imgproc.THRESH_BINARY);
 
-        // Dilate a bit the dist image
+        //Dilata um pouco a imagem dist
         Mat kernel1 = Mat.ones(3, 3, CvType.CV_8U);
         Imgproc.dilate(dist, dist, kernel1);
         Mat distDisplay2 = new Mat();
@@ -128,25 +101,24 @@ class ImageSegmentation {
         //! [peaks]
 
         //! [seeds]
-        // Create the CV_8U version of the distance image
-        // It is needed for findContours()
+        //Cria a versão CV_8U da imagem dist
         Mat dist_8u = new Mat();
         dist.convertTo(dist_8u, CvType.CV_8U);
 
-        // Find total markers
+        //Encontra os marcadores
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(dist_8u, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        // Create the marker image for the watershed algorithm
+        //Cria os marcadores da imagem para o algoritmo watershed
         Mat markers = Mat.zeros(dist.size(), CvType.CV_32S);
 
-        // Draw the foreground markers
+        //Desenha os marcadores da imagem em primeiro plano
         for (int i = 0; i < contours.size(); i++) {
             Imgproc.drawContours(markers, contours, i, new Scalar(i + 1), -1);
         }
 
-        // Draw the background marker
+        //Desenha o marcador de fundo
         Mat markersScaled = new Mat();
         markers.convertTo(markersScaled, CvType.CV_32F);
         Core.normalize(markersScaled, markersScaled, 0.0, 255.0, Core.NORM_MINMAX);
@@ -158,16 +130,14 @@ class ImageSegmentation {
         //! [seeds]
 
         //! [watershed]
-        // Perform the watershed algorithm
+        //Implementação do algoritimo watershed
         Imgproc.watershed(imgResult, markers);
 
         Mat mark = Mat.zeros(markers.size(), CvType.CV_8U);
         markers.convertTo(mark, CvType.CV_8UC1);
         Core.bitwise_not(mark, mark);
-        // imshow("Markers_v2", mark); // uncomment this if you want to see how the mark
-        // image looks like at that point
 
-        // Generate random colors
+        //Gera cores aleatórias
         Random rng = new Random(12345);
         List<Scalar> colors = new ArrayList<>(contours.size());
         for (int i = 0; i < contours.size(); i++) {
@@ -178,12 +148,12 @@ class ImageSegmentation {
             colors.add(new Scalar(b, g, r));
         }
 
-        // Create the result image
+        //Cria a imagem resultado
         Mat dst = Mat.zeros(markers.size(), CvType.CV_8UC3);
         byte[] dstData = new byte[(int) (dst.total() * dst.channels())];
         dst.get(0, 0, dstData);
 
-        // Fill labeled objects with random colors
+        //Preenche os pixels classificados com cores aleatórias
         int[] markersData = new int[(int) (markers.total() * markers.channels())];
         markers.get(0, 0, markersData);
         for (int i = 0; i < markers.rows(); i++) {
@@ -202,9 +172,7 @@ class ImageSegmentation {
         }
         dst.put(0, 0, dstData);
 
-        // Visualize the final image
-        HighGui.imshow("Crescimento Regiões", dst);
-        //! [watershed]
+        HighGui.imshow("Imagem watershed", dst);
 
         HighGui.waitKey();
         System.exit(0);

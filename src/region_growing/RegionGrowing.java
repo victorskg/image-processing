@@ -10,13 +10,13 @@ import java.util.List;
 
 public class RegionGrowing {
     public void run(String[] args) {
-        String imagem_padrão = "src/images/circulares/3829.jpg";
-        int diferenca_padrao = 50;
+        String imagemPadrao = "src/images/3310.jpg";
+        int diferencaPadrao = 50; //Altere para um resultado diferente na imagem após o crescimento de regiões
         List<Regiao> regioes = new ArrayList<>();
 
         //Verifica os argumentos do programa
-        String caminhoImagem = ((args.length > 0) ? args[0] : imagem_padrão);
-        int diferenca_cores = ((args.length > 1) ? Integer.parseInt(args[1]) : diferenca_padrao);
+        String caminhoImagem = ((args.length > 0) ? args[0] : imagemPadrao);
+        int diferencaCores = ((args.length > 1) ? Integer.parseInt(args[1]) : diferencaPadrao);
 
         //Carrega a imagem
         Mat imagem = Imgcodecs.imread(caminhoImagem, Imgcodecs.IMREAD_COLOR);
@@ -44,11 +44,11 @@ public class RegionGrowing {
                 Pixel pixel = new Pixel(i, j, imagemCrescimentoRegioes.get(i, j));
 
                 //Primeira região criada
-                if (regioes.size() == 0) {
+                if (regioes.isEmpty()) {
                     Regiao regiao = new Regiao();
                     regiao.pixels.add(pixel);
                     regioes.add(regiao);
-                    System.out.println("Primeira regiao");
+                    System.out.println("Primeira região");
                 } else {
                     boolean adicionado = false;
 
@@ -56,28 +56,30 @@ public class RegionGrowing {
                     for (int k = 0; k < regioes.size(); k++) {
                         if( Math.abs(regioes.get(k).pixels.get(0).intensidade[0] - imagemCrescimentoRegioes.get(i, j)[0]) +
                                 Math.abs(regioes.get(k).pixels.get(0).intensidade[1] - imagemCrescimentoRegioes.get(i, j)[1]) +
-                                        Math.abs(regioes.get(k).pixels.get(0).intensidade[2] - imagemCrescimentoRegioes.get(i, j)[2]) <= diferenca_padrao) {
+                                        Math.abs(regioes.get(k).pixels.get(0).intensidade[2] - imagemCrescimentoRegioes.get(i, j)[2]) <= diferencaCores) {
                             regioes.get(k).pixels.add(pixel);
                             adicionado = true;
-                            System.out.println("Mesma regiao");
+                            System.out.println("Região existente");
 
-                            /*Atualiza na imagem do crescimento a nova tonalidade do pixel pegando a tonalidade
+                            /*Atualiza na imagem do crescimento a nova tonalidade do pixel, de acordo com a tonalidade
                             do primeiro pixel daquela região*/
                             imagemCrescimentoRegioes.put(i, j, regioes.get(k).pixels.get(0).intensidade);
                             break;
                         }
                     }
+
+                    //Se o pixel não foi adicionado a nenhuma região já existente, então ele é o primeiro de uma nova região
                     if(!adicionado) {
-                        Regiao regiao1 = new Regiao();
-                        regiao1.pixels.add(pixel);
-                        regioes.add(regiao1);
+                        Regiao novaRegiao = new Regiao();
+                        novaRegiao.pixels.add(pixel);
+                        regioes.add(novaRegiao);
                         System.out.println("Nova região");
                     }
                 }
             }
         }
 
-        HighGui.imshow("Crescimento regiao", imagemCrescimentoRegioes);
+        HighGui.imshow("Crescimento de regiões", imagemCrescimentoRegioes);
 
         HighGui.waitKey();
         System.exit(0);

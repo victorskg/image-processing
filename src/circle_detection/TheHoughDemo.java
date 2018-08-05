@@ -1,3 +1,5 @@
+package circle_detection;
+
 import org.opencv.core.*;
 
 public class TheHoughDemo {
