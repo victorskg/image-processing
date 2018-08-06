@@ -17,7 +17,7 @@ import org.opencv.imgproc.Imgproc;
 class ImageSegmentation {
     public void run(String[] args) {
         //Carrega imagem
-        String filename = args.length > 0 ? args[0] : "src/images/3283.jpg";
+        String filename = args.length > 0 ? args[0] : "src/images/4606.jpg";
         Mat srcOriginal = Imgcodecs.imread(filename);
         if (srcOriginal.empty()) {
             System.err.println("Não foi possível ler a imagem: " + filename);
@@ -32,8 +32,8 @@ class ImageSegmentation {
         src.get(0, 0, srcData);
         for (int i = 0; i < src.rows(); i++) {
             for (int j = 0; j < src.cols(); j++) {
-                if (srcData[(i * src.cols() + j) * 3] >= (byte) 250 && srcData[(i * src.cols() + j) * 3 + 1] >= (byte) 250
-                        && srcData[(i * src.cols() + j) * 3 + 2] >= (byte) 250) {
+                if (srcData[(i * src.cols() + j) * 3] >= (byte) 220 && srcData[(i * src.cols() + j) * 3 + 1] >= (byte) 220
+                        && srcData[(i * src.cols() + j) * 3 + 2] >= (byte) 220) {
                     srcData[(i * src.cols() + j) * 3] = 0;
                     srcData[(i * src.cols() + j) * 3 + 1] = 0;
                     srcData[(i * src.cols() + j) * 3 + 2] = 0;
