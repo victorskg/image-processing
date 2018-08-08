@@ -18,33 +18,19 @@ public class KMeans {
 
 
     public static void main(String[] args) {
-        if (args.length!=4) {
-            System.out.println("Usage: java popscan.KMeans"
-                    + " [source image filename]"
-                    + " [destination image filename]"
-                    + " [clustercount 0-255]"
-                    + " [mode -i (ITERATIVE)|-c (CONTINUOS)]");
-            return;
-        }
-        // parse arguments
-        String src = args[0];
-        String dst = args[1];
-        int k = Integer.parseInt(args[2]);
-        String m = args[3];
         int mode = 1;
-        if (m.equals("-i")) {
-            mode = MODE_ITERATIVE;
-        } else if (m.equals("-c")) {
-            mode = MODE_CONTINUOUS;
+        File diretorio = new File("src/images/MediumCut"); //Carrega o diretorio que contem as imagens
+        String[] arquivos = diretorio.list(); //Cria uma lista com o nome dos arquivos
+        int quantidadeClusters = 4;
+        for(int i = 0; i < arquivos.length; i++) {
+            // create new KMeans object
+            KMeans kmeans = new KMeans();
+            // call the function to actually start the clustering
+            BufferedImage dstImage = kmeans.calculate(loadImage(diretorio.getPath()+"/"+arquivos[i]),
+                    quantidadeClusters, mode);
+            // save the resulting image
+            saveImage(diretorio.getPath()+"/kmeans/"+arquivos[i], dstImage);
         }
-
-        // create new KMeans object
-        KMeans kmeans = new KMeans();
-        // call the function to actually start the clustering
-        BufferedImage dstImage = kmeans.calculate(loadImage(src),
-                k,mode);
-        // save the resulting image
-        saveImage(dst, dstImage);
     }
 
     public KMeans() {    }
@@ -117,9 +103,9 @@ public class KMeans {
             }
         }
         long end = System.currentTimeMillis();
-        System.out.println("Clustered to "+k
-                + " clusters in "+loops
-                +" loops in "+(end-start)+" ms.");
+        System.out.println("Clusterizado em "+k
+                + " clusters em "+loops
+                +" laços em "+(end-start)+" ms.");
         return result;
     }
 
@@ -158,8 +144,8 @@ public class KMeans {
         try {
             ImageIO.write(image, "png", file);
         } catch (Exception e) {
-            System.out.println(e.toString()+" Image '"+filename
-                    +"' saving failed.");
+            System.out.println(e.toString()+" Imagem '"+filename
+                    +"' falhou ao salvar.");
         }
     }
 
@@ -168,8 +154,8 @@ public class KMeans {
         try {
             result = ImageIO.read(new File(filename));
         } catch (Exception e) {
-            System.out.println(e.toString()+" Image '"
-                    +filename+"' not found.");
+            System.out.println(e.toString()+" Imagem '"
+                    +filename+"' não encontrada.");
         }
         return result;
     }
